@@ -8,7 +8,6 @@ All rights reserved.
 
 """
 
-from __future__ import print_function
 import os
 import serial
 from PIL import Image
@@ -43,10 +42,6 @@ FINGERPRINT_READIMAGE = 0x01
 FINGERPRINT_LEDON = 0x50
 FINGERPRINT_LEDOFF = 0x51
 FINGERPRINT_READFREE = 0x52 # AKA read without LED control
-FINGERPRINT_ECHO = 0x53
-FINGERPRINT_AUTOLOGIN = 0x54
-FINGERPRINT_AUTOSEARCH = 0x55
-FINGERPRINT_SEARCHRESBACK = 0x56
 
 ## Note: The documentation mean upload to host computer.
 FINGERPRINT_DOWNLOADIMAGE = 0x0A
@@ -133,7 +128,7 @@ class PyFingerprint(object):
     __password = None
     __serial = None
 
-    def __init__(self, port = '/dev/ttyUSB0', baudRate = 57600, address = 0xFFFFFFFF, password = 0x00000000, debug=False):
+    def __init__(self, port = '/dev/ttyUSB0', baudRate = 57600, address = 0xFFFFFFFF, password = 0x00000000):
         """
         Constructor
 
@@ -141,10 +136,7 @@ class PyFingerprint(object):
         @param integer baudRate
         @param integer(4 bytes) address
         @param integer(4 bytes) password
-        @param bool debug
         """
-
-        self.debug = debug
 
         if ( os.path.exists(port) == False ):
             raise ValueError('The fingerprint sensor port "' + port + '" was not found!')
@@ -298,8 +290,6 @@ class PyFingerprint(object):
 
             if ( len(receivedFragment) != 0 ):
                 receivedFragment = self.__stringToByte(receivedFragment)
-            if self.debug:
-                print('Received packet fragment = ' + hex(receivedFragment))
 
             ## Insert byte if packet seems valid
             receivedPacketData.insert(i, receivedFragment)
@@ -310,8 +300,6 @@ class PyFingerprint(object):
 
                 ## Check the packet header
                 if ( receivedPacketData[0] != self.__rightShift(FINGERPRINT_STARTCODE, 8) or receivedPacketData[1] != self.__rightShift(FINGERPRINT_STARTCODE, 0) ):
-                    if self.debug:
-                        print("Invalid packet recieved: "+str(receivedPacketData))
                     raise Exception('The received packet do not begin with a valid header!')
 
                 ## Calculate packet payload length (combine the 2 length bytes)
@@ -915,23 +903,6 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
-
-    def findFreeIndex(self):
-        position_number = -1
-
-        for page in range(0, 4):
-            # Free index found?
-            if position_number >= 0:
-                break
-
-            template_index = self.get_template_index(page)
-
-            for i in range(0, len(template_index)):
-                # Index not used?
-                if not template_index[i]:
-                    position_number = (len(template_index) * page) + i
-                    break
-        return position_number
 
     def storeTemplate(self, positionNumber = -1, charBufferNumber = 0x01):
         """
