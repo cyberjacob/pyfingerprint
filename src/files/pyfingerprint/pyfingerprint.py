@@ -576,7 +576,7 @@ class PyFingerprint(object):
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
     
     def ledOn(self):
-        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LED_ON,))
+        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDON,))
         received_packet = self._read_packet()
 
         received_packet_type = received_packet[0]
@@ -591,7 +591,7 @@ class PyFingerprint(object):
             raise Exception('Unknown error ' + hex(received_packet_payload[0]))
     
     def ledOff(self):
-        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LED_OFF,))
+        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDOFF,))
         received_packet = self._read_packet()
 
         received_packet_type = received_packet[0]
@@ -726,7 +726,7 @@ class PyFingerprint(object):
         # Essentially means read a fingerprint without turning the LED on/off before and after.
         
         packet_payload = (
-            FINGERPRINT_READ_WITHOUT_LIGHT,
+            FINGERPRINT_READFREE,
         )
 
         self._write_packet(FINGERPRINT_COMMAND_PACKET, packet_payload)
