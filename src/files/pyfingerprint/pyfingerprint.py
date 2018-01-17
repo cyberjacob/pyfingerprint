@@ -564,23 +564,11 @@ class PyFingerprint(object):
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
 
-    def ledOn(self):
-        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDON,))
-        received_packet = self._read_packet()
-
-        received_packet_type = received_packet[0]
-        received_packet_payload = received_packet[1]
-
-        if received_packet_type != FINGERPRINT_ACK_PACKET:
-            raise Exception('The received packet is no ack packet!')
-        if received_packet_payload[0] == FINGERPRINT_OK:
-            return True
-
+    def switchLed(self, switchTo):
+        if switchTo:
+            self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDON,))
         else:
-            raise Exception('Unknown error ' + hex(received_packet_payload[0]))
-
-    def ledOff(self):
-        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDOFF,))
+            self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDOFF,))
         received_packet = self._read_packet()
 
         received_packet_type = received_packet[0]
