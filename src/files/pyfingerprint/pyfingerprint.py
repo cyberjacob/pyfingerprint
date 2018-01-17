@@ -673,16 +673,21 @@ class PyFingerprint(object):
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
 
-    def readImage(self):
+    def readImage(self, controlLighting=True):
         """
         Read the image of a finger and stores it in ImageBuffer.
 
         @return boolean
         """
-
-        packetPayload = (
-            FINGERPRINT_READIMAGE,
-        )
+        
+        if controlLighting:
+            packetPayload = (
+                FINGERPRINT_READIMAGE,
+            )
+        else:
+            packetPayload = (
+                FINGERPRINT_READFREE,
+            )
 
         self.__writePacket(FINGERPRINT_COMMANDPACKET, packetPayload)
         receivedPacket = self.__readPacket()
@@ -709,40 +714,6 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
-
-    def readImageWithoutLighting(self):
-        # Documentation calls this "read image free".
-        # Essentially means read a fingerprint without turning the LED on/off before and after.
-
-        packet_payload = (
-            FINGERPRINT_READFREE,
-        )
-
-        self._write_packet(FINGERPRINT_COMMAND_PACKET, packet_payload)
-        received_packet = self._read_packet()
-
-        received_packet_type = received_packet[0]
-        received_packet_payload = received_packet[1]
-
-        if received_packet_type != FINGERPRINT_ACK_PACKET:
-            raise Exception('The received packet is no ack packet!')
-
-        # DEBUG: Image read successful
-        if received_packet_payload[0] == FINGERPRINT_OK:
-            return True
-
-        elif received_packet_payload[0] == FINGERPRINT_ERROR_COMMUNICATION:
-            raise Exception('Communication error')
-
-        # DEBUG: No finger found
-        elif received_packet_payload[0] == FINGERPRINT_ERROR_NO_FINGER:
-            return False
-
-        elif received_packet_payload[0] == FINGERPRINT_ERROR_READ_IMAGE:
-            raise Exception('Could not read image')
-
-        else:
-            raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
     ## TODO:
     ## Implementation of uploadImage()
