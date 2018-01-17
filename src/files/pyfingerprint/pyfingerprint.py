@@ -565,6 +565,13 @@ class PyFingerprint(object):
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
 
     def switchLed(self, switchTo):
+        """
+        Control the LED of the scanner.
+        Pass True to turn the LED on, False to turn it off.
+        
+        @param bool switchTo
+        @return bool
+        """
         if switchTo:
             self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDON,))
         else:
@@ -664,6 +671,9 @@ class PyFingerprint(object):
     def readImage(self, controlLighting=True):
         """
         Read the image of a finger and stores it in ImageBuffer.
+        The controlLighting can be used to disable automatic LED control.
+        When set to True, the unit will automatically turn the LED on/off before and after scanning.
+        When set to False, this will not happen, and the LED must be controlled manually using the switchLed function.
 
         @return boolean
         """
