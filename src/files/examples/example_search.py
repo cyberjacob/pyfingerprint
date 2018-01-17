@@ -58,7 +58,7 @@ try:
     ##
 
     ## Loads the found template to charbuffer 1
-    f.loadTemplate(positionNumber, 0x01)
+    f.load_template(positionNumber, 0x01)
 
     ## Downloads the characteristics of template loaded in charbuffer 1
     characterics = str(f.download_characteristics(0x01)).encode('utf-8')

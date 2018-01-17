@@ -106,6 +106,70 @@ FINGERPRINT_ERROR_TIMEOUT = 0xFF
 FINGERPRINT_ERROR_BADPACKET = 0xFE
 
 
+def _right_shift(n, x):
+    """
+    Shift a byte.
+
+    @param integer n
+    @param integer x
+    @return integer
+    """
+
+    return n >> x & 0xFF
+
+
+def _left_shift(n, x):
+    """
+    Shift a byte.
+
+    @param integer n
+    @param integer x
+    @return integer
+    """
+
+    return n << x
+
+
+def _bit_at_position(n, p):
+    """
+    Get the bit of n at position p.
+
+    @param integer n
+    @param integer p
+    @return integer
+    """
+
+    ## A bitshift 2 ^ p
+    two_p = 1 << p
+
+    ## Binary AND composition (on both positions must be a 1)
+    ## This can only happen at position p
+    result = n & two_p
+    return int(result > 0)
+
+
+def _byte_to_string(byte):
+    """
+    Converts a byte to string.
+
+    @param byte byte
+    @return string
+    """
+
+    return struct.pack('@B', byte)
+
+
+def _string_to_byte(string):
+    """
+    Convert one "string" byte (like '0xFF') to real integer byte (0xFF).
+
+    @param string string
+    @return byte
+    """
+
+    return struct.unpack('@B', string)[0]
+
+
 class PyFingerprint(object):
     """
     A python written library for the ZhianTec ZFM-20 fingerprint sensor.
@@ -151,7 +215,7 @@ class PyFingerprint(object):
         ## Initialize PySerial connection
         self.__serial = serial.Serial(port=port, baudrate=baud_rate, bytesize=serial.EIGHTBITS, timeout=2)
 
-        if self.__serial.isOpen() == True:
+        if self.__serial.isOpen():
             self.__serial.close()
 
         self.__serial.open()
@@ -163,67 +227,8 @@ class PyFingerprint(object):
         """
 
         ## Close connection if still established
-        if self.__serial is not None and self.__serial.isOpen() == True:
+        if self.__serial is not None and self.__serial.isOpen():
             self.__serial.close()
-
-    def _right_shift(self, n, x):
-        """
-        Shift a byte.
-
-        @param integer n
-        @param integer x
-        @return integer
-        """
-
-        return n >> x & 0xFF
-
-    def _left_shift(self, n, x):
-        """
-        Shift a byte.
-
-        @param integer n
-        @param integer x
-        @return integer
-        """
-
-        return n << x
-
-    def _bit_at_position(self, n, p):
-        """
-        Get the bit of n at position p.
-
-        @param integer n
-        @param integer p
-        @return integer
-        """
-
-        ## A bitshift 2 ^ p
-        twoP = 1 << p
-
-        ## Binary AND composition (on both positions must be a 1)
-        ## This can only happen at position p
-        result = n & twoP
-        return int(result > 0)
-
-    def _byte_to_string(self, byte):
-        """
-        Converts a byte to string.
-
-        @param byte byte
-        @return string
-        """
-
-        return struct.pack('@B', byte)
-
-    def _string_to_byte(self, string):
-        """
-        Convert one "string" byte (like '0xFF') to real integer byte (0xFF).
-
-        @param string string
-        @return byte
-        """
-
-        return struct.unpack('@B', string)[0]
 
     def _write_packet(self, packet_type, packet_payload):
         """
@@ -236,33 +241,33 @@ class PyFingerprint(object):
         """
 
         ## Write header (one byte at once)
-        self.__serial.write(self._byte_to_string(self._right_shift(FINGERPRINT_STARTCODE, 8)))
-        self.__serial.write(self._byte_to_string(self._right_shift(FINGERPRINT_STARTCODE, 0)))
+        self.__serial.write(_byte_to_string(_right_shift(FINGERPRINT_STARTCODE, 8)))
+        self.__serial.write(_byte_to_string(_right_shift(FINGERPRINT_STARTCODE, 0)))
 
-        self.__serial.write(self._byte_to_string(self._right_shift(self.__address, 24)))
-        self.__serial.write(self._byte_to_string(self._right_shift(self.__address, 16)))
-        self.__serial.write(self._byte_to_string(self._right_shift(self.__address, 8)))
-        self.__serial.write(self._byte_to_string(self._right_shift(self.__address, 0)))
+        self.__serial.write(_byte_to_string(_right_shift(self.__address, 24)))
+        self.__serial.write(_byte_to_string(_right_shift(self.__address, 16)))
+        self.__serial.write(_byte_to_string(_right_shift(self.__address, 8)))
+        self.__serial.write(_byte_to_string(_right_shift(self.__address, 0)))
 
-        self.__serial.write(self._byte_to_string(packet_type))
+        self.__serial.write(_byte_to_string(packet_type))
 
         ## The packet length = package payload (n bytes) + checksum (2 bytes)
         packet_length = len(packet_payload) + 2
 
-        self.__serial.write(self._byte_to_string(self._right_shift(packet_length, 8)))
-        self.__serial.write(self._byte_to_string(self._right_shift(packet_length, 0)))
+        self.__serial.write(_byte_to_string(_right_shift(packet_length, 8)))
+        self.__serial.write(_byte_to_string(_right_shift(packet_length, 0)))
 
         ## The packet checksum = packet type (1 byte) + packet length (2 bytes) + payload (n bytes)
-        packet_checksum = packet_type + self._right_shift(packet_length, 8) + self._right_shift(packet_length, 0)
+        packet_checksum = packet_type + _right_shift(packet_length, 8) + _right_shift(packet_length, 0)
 
         ## Write payload
         for i in range(0, len(packet_payload)):
-            self.__serial.write(self._byte_to_string(packet_payload[i]))
+            self.__serial.write(_byte_to_string(packet_payload[i]))
             packet_checksum += packet_payload[i]
 
         ## Write checksum (2 bytes)
-        self.__serial.write(self._byte_to_string(self._right_shift(packet_checksum, 8)))
-        self.__serial.write(self._byte_to_string(self._right_shift(packet_checksum, 0)))
+        self.__serial.write(_byte_to_string(_right_shift(packet_checksum, 8)))
+        self.__serial.write(_byte_to_string(_right_shift(packet_checksum, 0)))
 
     def _read_packet(self):
         """
@@ -279,12 +284,11 @@ class PyFingerprint(object):
         i = 0
 
         while True:
-
             ## Read one byte
             received_fragment = self.__serial.read()
 
             if len(received_fragment) != 0:
-                received_fragment = self._string_to_byte(received_fragment)
+                received_fragment = _string_to_byte(received_fragment)
                 ## print 'Received packet fragment = ' + hex(received_fragment)
 
             ## Insert byte if packet seems valid
@@ -295,12 +299,12 @@ class PyFingerprint(object):
             if i >= 12:
 
                 ## Check the packet header
-                if received_packet_data[0] != self._right_shift(FINGERPRINT_STARTCODE, 8) or received_packet_data[1] != self._right_shift(FINGERPRINT_STARTCODE, 0):
+                if received_packet_data[0] != _right_shift(FINGERPRINT_STARTCODE, 8) or received_packet_data[1] != _right_shift(FINGERPRINT_STARTCODE, 0):
                     raise Exception('The received packet do not begin with a valid header!')
 
                 ## Calculate packet payload length (combine the 2 length bytes)
-                packet_payload_length = self._left_shift(received_packet_data[7], 8)
-                packet_payload_length = packet_payload_length | self._left_shift(received_packet_data[8], 0)
+                packet_payload_length = _left_shift(received_packet_data[7], 8)
+                packet_payload_length = packet_payload_length | _left_shift(received_packet_data[8], 0)
 
                 ## Check if the packet is still fully received
                 ## Condition: index counter < packet payload length + packet frame
@@ -323,8 +327,8 @@ class PyFingerprint(object):
                     packet_checksum += received_packet_data[j]
 
                 ## Calculate full checksum of the 2 separate checksum bytes
-                received_checksum = self._left_shift(received_packet_data[i - 2], 8)
-                received_checksum = received_checksum | self._left_shift(received_packet_data[i - 1], 0)
+                received_checksum = _left_shift(received_packet_data[i - 2], 8)
+                received_checksum = received_checksum | _left_shift(received_packet_data[i - 1], 0)
 
                 if received_checksum != packet_checksum:
                     raise Exception('The received packet is corrupted (the checksum is wrong)!')
@@ -340,10 +344,10 @@ class PyFingerprint(object):
 
         packet_payload = (
             FINGERPRINT_VERIFYPASSWORD,
-            self._right_shift(self.__password, 24),
-            self._right_shift(self.__password, 16),
-            self._right_shift(self.__password, 8),
-            self._right_shift(self.__password, 0),
+            _right_shift(self.__password, 24),
+            _right_shift(self.__password, 16),
+            _right_shift(self.__password, 8),
+            _right_shift(self.__password, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -386,10 +390,10 @@ class PyFingerprint(object):
 
         packet_payload = (
             FINGERPRINT_SETPASSWORD,
-            self._right_shift(new_password, 24),
-            self._right_shift(new_password, 16),
-            self._right_shift(new_password, 8),
-            self._right_shift(new_password, 0),
+            _right_shift(new_password, 24),
+            _right_shift(new_password, 16),
+            _right_shift(new_password, 8),
+            _right_shift(new_password, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -426,10 +430,10 @@ class PyFingerprint(object):
 
         packet_payload = (
             FINGERPRINT_SETADDRESS,
-            self._right_shift(new_address, 24),
-            self._right_shift(new_address, 16),
-            self._right_shift(new_address, 8),
-            self._right_shift(new_address, 0),
+            _right_shift(new_address, 24),
+            _right_shift(new_address, 16),
+            _right_shift(new_address, 8),
+            _right_shift(new_address, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -543,13 +547,13 @@ class PyFingerprint(object):
         ## DEBUG: Read successfully
         if received_packet_payload[0] == FINGERPRINT_OK:
 
-            status_register = self._left_shift(received_packet_payload[1], 8) | self._left_shift(received_packet_payload[2], 0)
-            system_id = self._left_shift(received_packet_payload[3], 8) | self._left_shift(received_packet_payload[4], 0)
-            storage_capacity = self._left_shift(received_packet_payload[5], 8) | self._left_shift(received_packet_payload[6], 0)
-            security_level = self._left_shift(received_packet_payload[7], 8) | self._left_shift(received_packet_payload[8], 0)
+            status_register = _left_shift(received_packet_payload[1], 8) | _left_shift(received_packet_payload[2], 0)
+            system_id = _left_shift(received_packet_payload[3], 8) | _left_shift(received_packet_payload[4], 0)
+            storage_capacity = _left_shift(received_packet_payload[5], 8) | _left_shift(received_packet_payload[6], 0)
+            security_level = _left_shift(received_packet_payload[7], 8) | _left_shift(received_packet_payload[8], 0)
             device_address = ((received_packet_payload[9] << 8 | received_packet_payload[10]) << 8 | received_packet_payload[11]) << 8 | received_packet_payload[12]  ## TODO
-            packet_length = self._left_shift(received_packet_payload[13], 8) | self._left_shift(received_packet_payload[14], 0)
-            baud_rate = self._left_shift(received_packet_payload[15], 8) | self._left_shift(received_packet_payload[16], 0)
+            packet_length = _left_shift(received_packet_payload[13], 8) | _left_shift(received_packet_payload[14], 0)
+            baud_rate = _left_shift(received_packet_payload[15], 8) | _left_shift(received_packet_payload[16], 0)
 
             return status_register, system_id, storage_capacity, security_level, device_address, packet_length, baud_rate
 
@@ -592,10 +596,10 @@ class PyFingerprint(object):
             ## Contain the table page bytes (skip the first status byte)
             page_elements = received_packet_payload[1:]
 
-            for pageElement in page_elements:
+            for page_element in page_elements:
                 ## Test every bit (bit = template position is used indicator) of a table page element
                 for p in range(0, 7 + 1):
-                    position_is_used = (self._bit_at_position(pageElement, p) == 1)
+                    position_is_used = (_bit_at_position(page_element, p) == 1)
                     template_index.append(position_is_used)
 
             return template_index
@@ -628,8 +632,8 @@ class PyFingerprint(object):
 
         ## DEBUG: Read successfully
         if received_packet_payload[0] == FINGERPRINT_OK:
-            template_count = self._left_shift(received_packet_payload[1], 8)
-            template_count = template_count | self._left_shift(received_packet_payload[2], 0)
+            template_count = _left_shift(received_packet_payload[1], 8)
+            template_count = template_count | _left_shift(received_packet_payload[2], 0)
             return template_count
 
         elif received_packet_payload[0] == FINGERPRINT_ERROR_COMMUNICATION:
@@ -855,7 +859,7 @@ class PyFingerprint(object):
 
                 for i in range(0, len(template_index)):
                     ## Index not used?
-                    if template_index[i] == False:
+                    if not template_index[i]:
                         position_number = (len(template_index) * page) + i
                         break
 
@@ -868,8 +872,8 @@ class PyFingerprint(object):
         packet_payload = (
             FINGERPRINT_STORETEMPLATE,
             char_buffer_number,
-            self._right_shift(position_number, 8),
-            self._right_shift(position_number, 0),
+            _right_shift(position_number, 8),
+            _right_shift(position_number, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -918,10 +922,10 @@ class PyFingerprint(object):
         packet_payload = (
             FINGERPRINT_SEARCHTEMPLATE,
             char_buffer_number,
-            self._right_shift(position_start, 8),
-            self._right_shift(position_start, 0),
-            self._right_shift(templates_count, 8),
-            self._right_shift(templates_count, 0),
+            _right_shift(position_start, 8),
+            _right_shift(position_start, 0),
+            _right_shift(templates_count, 8),
+            _right_shift(templates_count, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -936,13 +940,13 @@ class PyFingerprint(object):
         ## DEBUG: Found template
         if received_packet_payload[0] == FINGERPRINT_OK:
 
-            positionNumber = self._left_shift(received_packet_payload[1], 8)
-            positionNumber = positionNumber | self._left_shift(received_packet_payload[2], 0)
+            position_number = _left_shift(received_packet_payload[1], 8)
+            position_number = position_number | _left_shift(received_packet_payload[2], 0)
 
-            accuracyScore = self._left_shift(received_packet_payload[3], 8)
-            accuracyScore = accuracyScore | self._left_shift(received_packet_payload[4], 0)
+            accuracy_score = _left_shift(received_packet_payload[3], 8)
+            accuracy_score = accuracy_score | _left_shift(received_packet_payload[4], 0)
 
-            return positionNumber, accuracyScore
+            return position_number, accuracy_score
 
         elif received_packet_payload[0] == FINGERPRINT_ERROR_COMMUNICATION:
             raise Exception('Communication error')
@@ -954,26 +958,26 @@ class PyFingerprint(object):
         else:
             raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
-    def loadTemplate(self, positionNumber, charBufferNumber=0x01):
+    def load_template(self, position_number, char_buffer_number=0x01):
         """
         Load an existing template specified by position number to specified CharBuffer.
 
-        @param integer(2 bytes) positionNumber
-        @param integer(1 byte) charBufferNumber
+        @param integer(2 bytes) position_number
+        @param integer(1 byte) char_buffer_number
         @return boolean
         """
 
-        if positionNumber < 0x0000 or positionNumber >= self.get_storage_capacity():
+        if position_number < 0x0000 or position_number >= self.get_storage_capacity():
             raise ValueError('The given position number is invalid!')
 
-        if charBufferNumber != 0x01 and charBufferNumber != 0x02:
+        if char_buffer_number != 0x01 and char_buffer_number != 0x02:
             raise ValueError('The given charbuffer number is invalid!')
 
         packet_payload = (
             FINGERPRINT_LOADTEMPLATE,
-            charBufferNumber,
-            self._right_shift(positionNumber, 8),
-            self._right_shift(positionNumber, 0),
+            char_buffer_number,
+            _right_shift(position_number, 8),
+            _right_shift(position_number, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -1001,29 +1005,29 @@ class PyFingerprint(object):
         else:
             raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
-    def deleteTemplate(self, positionNumber, count=1):
+    def delete_template(self, position_number, count=1):
         """
         Delete templates from fingerprint database. Per default one.
 
-        @param integer(2 bytes) positionNumber
+        @param integer(2 bytes) position_number
         @param integer(2 bytes) count
         @return boolean
         """
 
         capacity = self.get_storage_capacity()
 
-        if positionNumber < 0x0000 or positionNumber >= capacity:
+        if position_number < 0x0000 or position_number >= capacity:
             raise ValueError('The given position number is invalid!')
 
-        if count < 0x0000 or count > capacity - positionNumber:
+        if count < 0x0000 or count > capacity - position_number:
             raise ValueError('The given count is invalid!')
 
         packet_payload = (
             FINGERPRINT_DELETETEMPLATE,
-            self._right_shift(positionNumber, 8),
-            self._right_shift(positionNumber, 0),
-            self._right_shift(count, 8),
-            self._right_shift(count, 0),
+            _right_shift(position_number, 8),
+            _right_shift(position_number, 0),
+            _right_shift(count, 8),
+            _right_shift(count, 0),
         )
 
         self._write_packet(FINGERPRINT_COMMANDPACKET, packet_payload)
@@ -1108,8 +1112,8 @@ class PyFingerprint(object):
 
         ## DEBUG: Comparison successful
         if received_packet_payload[0] == FINGERPRINT_OK:
-            accuracy_score = self._left_shift(received_packet_payload[1], 8)
-            accuracy_score = accuracy_score | self._left_shift(received_packet_payload[2], 0)
+            accuracy_score = _left_shift(received_packet_payload[1], 8)
+            accuracy_score = accuracy_score | _left_shift(received_packet_payload[2], 0)
             return accuracy_score
 
         elif received_packet_payload[0] == FINGERPRINT_ERROR_COMMUNICATION:
@@ -1260,10 +1264,10 @@ class PyFingerprint(object):
             raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
         number = 0
-        number = number | self._left_shift(received_packet_payload[1], 24)
-        number = number | self._left_shift(received_packet_payload[2], 16)
-        number = number | self._left_shift(received_packet_payload[3], 8)
-        number = number | self._left_shift(received_packet_payload[4], 0)
+        number = number | _left_shift(received_packet_payload[1], 24)
+        number = number | _left_shift(received_packet_payload[2], 16)
+        number = number | _left_shift(received_packet_payload[3], 8)
+        number = number | _left_shift(received_packet_payload[4], 0)
         return number
 
     def download_characteristics(self, char_buffer_number=0x01):

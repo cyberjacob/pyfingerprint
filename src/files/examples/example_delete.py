@@ -35,7 +35,7 @@ try:
     positionNumber = input('Please enter the template position you want to delete: ')
     positionNumber = int(positionNumber)
 
-    if ( f.deleteTemplate(positionNumber) == True ):
+    if ( f.delete_template(positionNumber) == True):
         print('Template deleted!')
 
 except Exception as e:
