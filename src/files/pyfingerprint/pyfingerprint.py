@@ -39,6 +39,14 @@ FINGERPRINT_TEMPLATECOUNT = 0x1D
 
 FINGERPRINT_READIMAGE = 0x01
 
+FINGERPRINT_LEDON = 0x50
+FINGERPRINT_LEDOFF = 0x51
+FINGERPRINT_READFREE = 0x52 # AKA read without LED control
+FINGERPRINT_ECHO = 0x53
+FINGERPRINT_AUTOLOGIN = 0x54
+FINGERPRINT_AUTOSEARCH = 0x55
+FINGERPRINT_SEARCHRESBACK = 0x56
+
 ## Note: The documentation mean upload to host computer.
 FINGERPRINT_DOWNLOADIMAGE = 0x0A
 
@@ -124,7 +132,7 @@ class PyFingerprint(object):
     __password = None
     __serial = None
 
-    def __init__(self, port = '/dev/ttyUSB0', baudRate = 57600, address = 0xFFFFFFFF, password = 0x00000000):
+    def __init__(self, port = '/dev/ttyUSB0', baudRate = 57600, address = 0xFFFFFFFF, password = 0x00000000, debug=False):
         """
         Constructor
 
@@ -132,7 +140,10 @@ class PyFingerprint(object):
         @param integer baudRate
         @param integer(4 bytes) address
         @param integer(4 bytes) password
+        @param bool debug
         """
+        
+        self.debug = debug
 
         if ( os.path.exists(port) == False ):
             raise ValueError('The fingerprint sensor port "' + port + '" was not found!')
@@ -286,7 +297,8 @@ class PyFingerprint(object):
 
             if ( len(receivedFragment) != 0 ):
                 receivedFragment = self.__stringToByte(receivedFragment)
-                ## print 'Received packet fragment = ' + hex(receivedFragment)
+            if self.debug:
+                print 'Received packet fragment = ' + hex(receivedFragment)
 
             ## Insert byte if packet seems valid
             receivedPacketData.insert(i, receivedFragment)
@@ -297,6 +309,8 @@ class PyFingerprint(object):
 
                 ## Check the packet header
                 if ( receivedPacketData[0] != self.__rightShift(FINGERPRINT_STARTCODE, 8) or receivedPacketData[1] != self.__rightShift(FINGERPRINT_STARTCODE, 0) ):
+                    if self.debug:
+                        print("Invalid packet recieved: "+str(receivedPacketData))
                     raise Exception('The received packet do not begin with a valid header!')
 
                 ## Calculate packet payload length (combine the 2 length bytes)
@@ -461,6 +475,7 @@ class PyFingerprint(object):
         @param integer(1 byte) parameterValue
         @return boolean
         """
+        #TODO: Make seperate functions for each of the parameters, would be more useful.
 
         ## Validate the baudrate parameter
         if ( parameterNumber == 4 ):
@@ -559,6 +574,36 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
+    
+    def ledOn(self):
+        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LED_ON,))
+        received_packet = self._read_packet()
+
+        received_packet_type = received_packet[0]
+        received_packet_payload = received_packet[1]
+
+        if received_packet_type != FINGERPRINT_ACK_PACKET:
+            raise Exception('The received packet is no ack packet!')
+        if received_packet_payload[0] == FINGERPRINT_OK:
+            return True
+
+        else:
+            raise Exception('Unknown error ' + hex(received_packet_payload[0]))
+    
+    def ledOff(self):
+        self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LED_OFF,))
+        received_packet = self._read_packet()
+
+        received_packet_type = received_packet[0]
+        received_packet_payload = received_packet[1]
+
+        if received_packet_type != FINGERPRINT_ACK_PACKET:
+            raise Exception('The received packet is no ack packet!')
+        if received_packet_payload[0] == FINGERPRINT_OK:
+            return True
+
+        else:
+            raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
     def getTemplateIndex(self, page):
         """
@@ -675,6 +720,40 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
+    
+    def readImageWithoutLighting(self):
+        # Documentation calls this "read image free".
+        # Essentially means read a fingerprint without turning the LED on/off before and after.
+        
+        packet_payload = (
+            FINGERPRINT_READ_WITHOUT_LIGHT,
+        )
+
+        self._write_packet(FINGERPRINT_COMMAND_PACKET, packet_payload)
+        received_packet = self._read_packet()
+
+        received_packet_type = received_packet[0]
+        received_packet_payload = received_packet[1]
+
+        if received_packet_type != FINGERPRINT_ACK_PACKET:
+            raise Exception('The received packet is no ack packet!')
+
+        # DEBUG: Image read successful
+        if received_packet_payload[0] == FINGERPRINT_OK:
+            return True
+
+        elif received_packet_payload[0] == FINGERPRINT_ERROR_COMMUNICATION:
+            raise Exception('Communication error')
+
+        # DEBUG: No finger found
+        elif received_packet_payload[0] == FINGERPRINT_ERROR_NO_FINGER:
+            return False
+
+        elif received_packet_payload[0] == FINGERPRINT_ERROR_READ_IMAGE:
+            raise Exception('Could not read image')
+
+        else:
+            raise Exception('Unknown error ' + hex(received_packet_payload[0]))
 
     ## TODO:
     ## Implementation of uploadImage()
@@ -835,6 +914,23 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
+    
+    def findFreeIndex(self):
+        position_number = -1
+
+        for page in range(0, 4):
+            # Free index found?
+            if position_number >= 0:
+                break
+
+            template_index = self.get_template_index(page)
+
+            for i in range(0, len(template_index)):
+                # Index not used?
+                if not template_index[i]:
+                    position_number = (len(template_index) * page) + i
+                    break
+        return position_number
 
     def storeTemplate(self, positionNumber = -1, charBufferNumber = 0x01):
         """
