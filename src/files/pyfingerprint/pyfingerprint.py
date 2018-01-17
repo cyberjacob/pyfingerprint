@@ -8,6 +8,7 @@ All rights reserved.
 
 """
 
+from __future__ import print_function
 import os
 import serial
 from PIL import Image
@@ -142,7 +143,7 @@ class PyFingerprint(object):
         @param integer(4 bytes) password
         @param bool debug
         """
-        
+
         self.debug = debug
 
         if ( os.path.exists(port) == False ):
@@ -298,7 +299,7 @@ class PyFingerprint(object):
             if ( len(receivedFragment) != 0 ):
                 receivedFragment = self.__stringToByte(receivedFragment)
             if self.debug:
-                print 'Received packet fragment = ' + hex(receivedFragment)
+                print('Received packet fragment = ' + hex(receivedFragment))
 
             ## Insert byte if packet seems valid
             receivedPacketData.insert(i, receivedFragment)
@@ -574,7 +575,7 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
-    
+
     def ledOn(self):
         self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDON,))
         received_packet = self._read_packet()
@@ -589,7 +590,7 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error ' + hex(received_packet_payload[0]))
-    
+
     def ledOff(self):
         self._write_packet(FINGERPRINT_COMMAND_PACKET, (FINGERPRINT_LEDOFF,))
         received_packet = self._read_packet()
@@ -720,11 +721,11 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
-    
+
     def readImageWithoutLighting(self):
         # Documentation calls this "read image free".
         # Essentially means read a fingerprint without turning the LED on/off before and after.
-        
+
         packet_payload = (
             FINGERPRINT_READFREE,
         )
@@ -914,7 +915,7 @@ class PyFingerprint(object):
 
         else:
             raise Exception('Unknown error '+ hex(receivedPacketPayload[0]))
-    
+
     def findFreeIndex(self):
         position_number = -1
 
