@@ -1420,3 +1420,20 @@ class PyFingerprint(object):
                 completePayload.append(receivedPacketPayload[i])
 
         return completePayload
+    
+    def findFreeIndex(self):
+        position_number = -1
+
+        for page in range(0, 4):
+            # Free index found?
+            if position_number >= 0:
+                break
+
+            template_index = self.get_template_index(page)
+
+            for i in range(0, len(template_index)):
+                # Index not used?
+                if not template_index[i]:
+                    position_number = (len(template_index) * page) + i
+                    break
+        return position_number
