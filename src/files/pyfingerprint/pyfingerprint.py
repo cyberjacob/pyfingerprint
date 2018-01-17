@@ -286,6 +286,7 @@ class PyFingerprint(object):
 
             if ( len(receivedFragment) != 0 ):
                 receivedFragment = self.__stringToByte(receivedFragment)
+                ## print 'Received packet fragment = ' + hex(receivedFragment)
 
             ## Insert byte if packet seems valid
             receivedPacketData.insert(i, receivedFragment)
@@ -460,7 +461,6 @@ class PyFingerprint(object):
         @param integer(1 byte) parameterValue
         @return boolean
         """
-        #TODO: Make seperate functions for each of the parameters, would be more useful.
 
         ## Validate the baudrate parameter
         if ( parameterNumber == 4 ):
