@@ -19,7 +19,7 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 try:
     f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
 
-    if ( f.verifyPassword() == False ):
+    if ( f.verify_password() == False):
         raise ValueError('The given fingerprint sensor password is wrong!')
 
 except Exception as e:
@@ -28,21 +28,21 @@ except Exception as e:
     exit(1)
 
 ## Gets some sensor information
-print('Currently used templates: ' + str(f.getTemplateCount()) +'/'+ str(f.getStorageCapacity()))
+print('Currently used templates: ' + str(f.get_template_count()) + '/' + str(f.get_storage_capacity()))
 
 ## Tries to search the finger and calculate hash
 try:
     print('Waiting for finger...')
 
     ## Wait that finger is read
-    while ( f.readImage() == False ):
+    while (f.read_image() == False):
         pass
 
     ## Converts read image to characteristics and stores it in charbuffer 1
-    f.convertImage(0x01)
+    f.convert_image(0x01)
 
     ## Searchs template
-    result = f.searchTemplate()
+    result = f.search_template()
 
     positionNumber = result[0]
     accuracyScore = result[1]
@@ -61,7 +61,7 @@ try:
     f.loadTemplate(positionNumber, 0x01)
 
     ## Downloads the characteristics of template loaded in charbuffer 1
-    characterics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
+    characterics = str(f.download_characteristics(0x01)).encode('utf-8')
 
     ## Hashes characteristics of template
     print('SHA-2 hash of template: ' + hashlib.sha256(characterics).hexdigest())

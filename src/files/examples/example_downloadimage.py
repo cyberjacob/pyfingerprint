@@ -19,7 +19,7 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 try:
     f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
 
-    if ( f.verifyPassword() == False ):
+    if ( f.verify_password() == False):
         raise ValueError('The given fingerprint sensor password is wrong!')
 
 except Exception as e:
@@ -28,20 +28,20 @@ except Exception as e:
     exit(1)
 
 ## Gets some sensor information
-print('Currently used templates: ' + str(f.getTemplateCount()) +'/'+ str(f.getStorageCapacity()))
+print('Currently used templates: ' + str(f.get_template_count()) + '/' + str(f.get_storage_capacity()))
 
 ## Tries to read image and download it
 try:
     print('Waiting for finger...')
 
     ## Wait that finger is read
-    while ( f.readImage() == False ):
+    while (f.read_image() == False):
         pass
 
     print('Downloading image (this take a while)...')
 
     imageDestination =  tempfile.gettempdir() + '/fingerprint.bmp'
-    f.downloadImage(imageDestination)
+    f.download_image(imageDestination)
 
     print('The image was saved to "' + imageDestination + '".')
 

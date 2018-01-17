@@ -19,7 +19,7 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 try:
     f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
 
-    if ( f.verifyPassword() == False ):
+    if ( f.verify_password() == False):
         raise ValueError('The given fingerprint sensor password is wrong!')
 
 except Exception as e:
@@ -28,21 +28,21 @@ except Exception as e:
     exit(1)
 
 ## Gets some sensor information
-print('Currently used templates: ' + str(f.getTemplateCount()) +'/'+ str(f.getStorageCapacity()))
+print('Currently used templates: ' + str(f.get_template_count()) + '/' + str(f.get_storage_capacity()))
 
 ## Tries to enroll new finger
 try:
     print('Waiting for finger...')
 
     ## Wait that finger is read
-    while ( f.readImage() == False ):
+    while (f.read_image() == False):
         pass
 
     ## Converts read image to characteristics and stores it in charbuffer 1
-    f.convertImage(0x01)
+    f.convert_image(0x01)
 
     ## Checks if finger is already enrolled
-    result = f.searchTemplate()
+    result = f.search_template()
     positionNumber = result[0]
 
     if ( positionNumber >= 0 ):
@@ -55,21 +55,21 @@ try:
     print('Waiting for same finger again...')
 
     ## Wait that finger is read again
-    while ( f.readImage() == False ):
+    while (f.read_image() == False):
         pass
 
     ## Converts read image to characteristics and stores it in charbuffer 2
-    f.convertImage(0x02)
+    f.convert_image(0x02)
 
     ## Compares the charbuffers
-    if ( f.compareCharacteristics() == 0 ):
+    if ( f.compare_characteristics() == 0):
         raise Exception('Fingers do not match')
 
     ## Creates a template
-    f.createTemplate()
+    f.create_template()
 
     ## Saves template at new position number
-    positionNumber = f.storeTemplate()
+    positionNumber = f.store_template()
     print('Finger enrolled successfully!')
     print('New template position #' + str(positionNumber))
 

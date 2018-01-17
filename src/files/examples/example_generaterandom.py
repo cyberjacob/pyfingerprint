@@ -18,7 +18,7 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 try:
     f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
 
-    if ( f.verifyPassword() == False ):
+    if ( f.verify_password() == False):
         raise ValueError('The given fingerprint sensor password is wrong!')
 
 except Exception as e:
@@ -28,7 +28,7 @@ except Exception as e:
 
 ## Tries to generate a 32-bit random number
 try:
-    print(f.generateRandomNumber())
+    print(f.generate_random_number())
 
 except Exception as e:
     print('Operation failed!')
